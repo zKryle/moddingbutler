@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="ModdingButler.commands.category"
+            name="Sample Category">
+      </category>
+      <command
+            categoryId="ModdingButler.commands.category"
+            name="Sample Command"
+            id="ModdingButler.commands.sampleCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="ModdingButler.commands.sampleCommand"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               id="ModdingButler.menus.sampleMenu"
+               label="Sample Menu"
+               mnemonic="M">
+            <command
+                  commandId="ModdingButler.commands.sampleCommand"
+                  id="ModdingButler.menus.sampleCommand"
+                  mnemonic="S">
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="ModdingButler.toolbars.sampleToolbar">
+            <command
+                  id="ModdingButler.toolbars.sampleCommand"
+                  commandId="ModdingButler.commands.sampleCommand"
+                  tooltip="Say hello world">
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            id="ModdingButler"
+            name="Modding Butler">
+      </category>
+      <wizard
+            category="ModdingButler"
+            project="true"
+            icon="icons/icon_project_forge.png"
+            class="moddingbutler.wizards.NewForgeProjectWizard"
+            id="moddingbutler.wizards.NewForgeProjectWizard"
+            name="Forge Mod">
+      </wizard>
+      <wizard
+            category="ModdingButler"
+            project="true"
+            icon="icons/icon_project_fabric.png"
+            class="moddingbutler.wizards.NewFabricProjectWizard"
+            id="moddingbutler.wizards.NewFabricProjectWizard"
+            name="Fabric Mod">
+      </wizard>
+   </extension>
+
+</plugin>
