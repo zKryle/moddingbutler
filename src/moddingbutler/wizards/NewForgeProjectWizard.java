@@ -1,5 +1,8 @@
 package moddingbutler.wizards;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.commands.ExecutionException;
@@ -24,6 +27,7 @@ import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 import moddingbutler.ImageResource;
 import moddingbutler.util.FileUtil;
 import moddingbutler.util.ForgeUtil;
+import moddingbutler.util.GradleUtil;
 import moddingbutler.wizards.page.NewForgeProjectOptionsPage;
 
 public class NewForgeProjectWizard extends BaseNewProjectWizard {
@@ -117,28 +121,82 @@ public class NewForgeProjectWizard extends BaseNewProjectWizard {
 		description.setLocation(newPath);
 
 		final String mdkPath = optionsPage.getMdkPath();
-		final String projectLocation = mainPage.getLocationPath().toOSString() + "\\" + (mainPage.useDefaults() ? mainPage.getProjectName() + "\\" : "");
+		final String projectLocation = mainPage.getLocationPath().toOSString() + "\\"
+				+ (mainPage.useDefaults() ? mainPage.getProjectName() + "\\" : "");
 		System.out.println(projectLocation);
 
 		WorkspaceModifyOperation op = new WorkspaceModifyOperation() {
 			@Override
 			protected void execute(IProgressMonitor monitor) throws CoreException {
-				monitor.beginTask("Setup forge mod.", 110);
+				monitor.beginTask("Setup forge mod.", 220);
 
 				// Copy MDK
 				monitor.setTaskName("Copying MDK to destination");
 				try {
 					FileUtil.makeDir(projectLocation);
-//					FileUtil.copyFile(mdkPath, projectLocation);
 					FileUtil.unzip(mdkPath, projectLocation);
 				} catch (Exception e) {
 					throw new RuntimeException("Error copying MDK to destination.");
 				}
-				monitor.worked(5);
+				monitor.worked(20);
+
+				// Run commands
+				monitor.setTaskName("Generating Eclipse Runs: Starting Daemon");
+				try {
+					Process process = FileUtil.runCommand("gradlew genEclipseRuns --refresh-dependencies",
+							projectLocation);
+					InputStream stdout = process.getInputStream();
+					BufferedReader reader = new BufferedReader(new InputStreamReader(stdout));
+					while (process.isAlive()) {
+						String line = reader.readLine();
+						if (line == null)
+							continue;
+						if (line.contains("> Configure")) {
+							monitor.setTaskName("Generating Eclipse Runs: Configuring Project");
+						} else if (line.contains("> Task :")) {
+							monitor.setTaskName("Generating Eclipse Runs: " + line.replace("> Task :", ""));
+						}
+					}
+
+					int result = process.exitValue();
+
+					if (result != 0) {
+						throw new RuntimeException("Error running gradlew commands.");
+					}
+					
+					monitor.worked(100);
+
+					monitor.setTaskName("Applying Eclispe Plugin: Starting Daemon");
+					process = FileUtil.runCommand("gradlew eclipse", projectLocation);
+					stdout = process.getInputStream();
+					reader = new BufferedReader(new InputStreamReader(stdout));
+					while (process.isAlive()) {
+						String line = reader.readLine();
+						if (line == null)
+							continue;
+						if (line.contains("> Configure")) {
+							monitor.setTaskName("Applying Eclispe Plugin: Configuring Project");
+						} else if (line.contains("> Task :")) {
+							monitor.setTaskName("Applying Eclispe Plugin: " + line.replace("> Task :", ""));
+						}
+					}
+
+					result = process.exitValue();
+
+					if (result != 0) {
+						throw new RuntimeException("Error running gradlew commands.");
+					}
+					
+					monitor.worked(100);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					throw new RuntimeException("Error running gradlew commands.");
+				}
 
 			}
 		};
-		
+
 		IRunnableWithProgress op2 = monitor -> {
 			CreateProjectOperation op1 = new CreateProjectOperation(description, "New Forge Project");
 			try {
@@ -151,6 +209,7 @@ public class NewForgeProjectWizard extends BaseNewProjectWizard {
 		try {
 			getContainer().run(true, true, op);
 			getContainer().run(true, true, op2);
+			GradleUtil.addGradleNature(newProject);
 		} catch (InterruptedException e) {
 			return null;
 		} catch (InvocationTargetException e) {
@@ -168,6 +227,8 @@ public class NewForgeProjectWizard extends BaseNewProjectWizard {
 			}
 			e.printStackTrace();
 			return null;
+		} catch (CoreException e) {
+			MessageDialog.openError(getShell(), "Unable to add gradle nature.", e.getMessage());
 		}
 
 		return newProject;

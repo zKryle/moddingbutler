@@ -14,6 +14,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 public class FileUtil {
+	private static final String OS = System.getProperty("os.name").toUpperCase();
 
 	public static boolean pathExists(String path) {
 		return Files.exists(Paths.get(path)) && path.length() > 0;
@@ -61,8 +62,32 @@ public class FileUtil {
 				dest.close();
 				is.close();
 			}
-
 		}
+	}
 
+	public static Process runCommand(String command, String loc) throws IOException {
+		return Runtime.getRuntime().exec(terminalPrefix() + command, null, new File(loc));
+	}
+
+	private static String terminalPrefix() {
+		if (isWindows())
+			return "cmd /c ";
+		if (isMac())
+			return "/bin/bash -c ";
+		if (isUnix())
+			return "bash -c ";
+		return "";
+	}
+
+	public static boolean isWindows() {
+		return OS.contains("WIN");
+	}
+
+	public static boolean isMac() {
+		return OS.contains("MAC");
+	}
+
+	public static boolean isUnix() {
+		return OS.contains("NIX") || OS.contains("NUX") || OS.contains("AIX");
 	}
 }
