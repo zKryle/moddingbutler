@@ -1,0 +1,25 @@
+<idea-plugin>
+    <id>org.zkryle.moddingbutler</id>
+    <name>Modding Butler</name>
+    <vendor email="com" url="com">zKryle</vendor>
+
+    <description><![CDATA[
+    A plugin to easily setup mods for forge and fabric.
+    ]]></description>
+
+    <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <moduleBuilder builderClass="org.zkryle.moddingbutler.modules.builders.ModdingButlerModuleBuilder"
+                       id="MODDINGBUTLER_STEP"
+                       order="first"/>
+        <moduleType id="MODDINGBUTLER_MODULE_TYPE" implementationClass="org.zkryle.moddingbutler.modules.types.ModdingButlerModuleType"/>
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
